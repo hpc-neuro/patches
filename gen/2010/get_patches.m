@@ -1,0 +1,35 @@
+% global variable: patchSize sets the length of the sides of the square patch
+path_r = '/Users/sb/neuro_comp/tjudd/';
+files = dir([path_r 'ALLSTIMULI/*.jpeg']);
+patchSize = 100;
+
+for i=1:length(files)
+    name = files(i).name;
+    basename = name(1:length(name)-5);
+    img = imread([path_r 'ALLSTIMULI/' name]);
+    load([path_r 'ALLFIXATIONMAPS/' basename '.mat' ]);
+    
+    thresh = median(saliencyMapBlur(:));
+    highSaliencyMap = saliencyMapBlur;
+    highSaliencyMap(saliencyMapBlur <= thresh) = 0;
+    [highPatch, nRejected, leftH, rightH, topH, bottomH] = sample_patch(img, highSaliencyMap, patchSize);
+    imwrite(highPatch, [path_r 'PATCHES/' basename '-high.jpeg']);
+    
+    lowSaliencyMap = saliencyMapBlur;
+    lowSaliencyMap(saliencyMapBlur > thresh) = 0;
+    if thresh == 0
+        lowSaliencyMap(saliencyMapBlur <= thresh) = 1;
+    end
+    [lowPatch, nRejected, leftL, rightL, topL, bottomL] = sample_patch(img, lowSaliencyMap, patchSize);
+    imwrite(lowPatch, [path_r 'PATCHES/' basename '-low.jpeg']);
+    
+    f = figure('visible','off');
+    h = image(img);
+    set(h, 'AlphaData', uint8(saliencyMapBlur + 50))
+    rectangle('Position', [leftH, topH, patchSize, patchSize], 'EdgeColor', 'g')
+    rectangle('Position', [leftL, topL, patchSize, patchSize], 'EdgeColor', 'r')
+    saveas(f, [path_r 'MAPS/' basename '-map.jpeg'])
+    %fclose('all');
+    close all hidden;
+    disp(i);
+end

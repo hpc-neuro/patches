@@ -1,0 +1,47 @@
+%
+% Extracts a square patch of a given size from the provided image.
+% 
+% Returns the patch and a struct containing:
+%    patch_size
+%    start_x, end_x, x_range
+%    start_y, end_y, y_range
+% where x and y locations are relative to the top left corner of the image.
+%
+% Author: Cyrus Omar (cyrus.omar@gmail.com)
+% Date: June 6, 2011
+%
+
+function [patch, patchInfo] = gen_patch(img, patch_size)
+    [height, width, c] = size(img);
+    
+    % sanity check patch size
+    assert(patch_size > 0);
+    assert(patch_size <= height);
+    assert(patch_size <= width);
+    
+    % calculate maximum x and y location for the top-left corner of patch
+    max_x = width - patch_size + 1;
+    max_y = height - patch_size + 1;
+    
+    % generate patch coordinates
+    start_x = unidrnd(max_x);
+    end_x = start_x + patch_size - 1; 
+    x_range = start_x:end_x;
+    
+    start_y = unidrnd(max_y); 
+    end_y = start_y + patch_size - 1;
+    y_range = start_y:end_y;
+    
+    % extract patch
+    patch = img(y_range, x_range, :);
+    
+    % return the patch size and coordinates in a struct
+    patchInfo = struct(...
+        'patch_size', patch_size, ...
+        'start_x', start_x, ...
+        'end_x', end_x, ...
+        'x_range', x_range, ...
+        'start_y', start_y, ...
+        'end_y', end_y, ... 
+        'y_range', y_range...
+    );
