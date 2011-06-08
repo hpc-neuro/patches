@@ -18,13 +18,12 @@ function patchExp()
     % MacOS-X naming scheme   
     
     [button answer] = getInfo;
-
       
     % unsaved params %% should save patch_struct to exp_struct
     patch_struct = struct();
     
     % init window
-    Screen('Preference','SkipSyncTests', 1);
+    %Screen('Preference','SkipSyncTests', 1);
     maxScreen = max(Screen('Screens'));
     [patch_struct.w0, patch_struct.w0_rect] = ...
 	Screen('OpenWindow',maxScreen);%, ([], [0 0 400 400]);
@@ -115,6 +114,7 @@ function patchExp()
     instr(patch_struct.w0);
     exp_struct = experiment(button, p);
     Screen('CloseAll');
+    exp.p = p;  %% save everything!
 end  
 
 
