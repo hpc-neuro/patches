@@ -3,10 +3,8 @@
 
 function patchExp()
     
-    global exp_struct
-    
-    %  addpath('Users/petavision/neuro_comp/dev/sosB/utilsB');
-    
+    global exp_struct 
+        
     % w0 is the window pointer
     % w0_rect is a 4-element array containing the x,y coordinates of the
     %   upper left and lower right corners of the screen   n   
@@ -17,110 +15,112 @@ function patchExp()
     % KbName('UnifyKeyNames');    % Switches internal naming scheme to
     % MacOS-X naming scheme   
     
-    [button answer] = getInfo;
-      
-    % unsaved params %% should save patch_struct to exp_struct
-    patch_struct = struct();
+    [button answer] = getInfo;    
+    
+    ptb_struct = struct(); % psych toolbox related parameters
     
     % init window
-    %Screen('Preference','SkipSyncTests', 1);
-    maxScreen = max(Screen('Screens'));
-    [patch_struct.w0, patch_struct.w0_rect] = ...
-	Screen('OpenWindow',maxScreen);%, ([], [0 0 400 400]);
+    width = 1024;
+    height = 768;
+    top = 0;
+    left = 1680;
+    bottom = top + height;
+    right = left + width;
     
-    patch_struct.screen_xC = patch_struct.w0_rect(3)/2;          % x midpoint
-    patch_struct.screen_yC = patch_struct.w0_rect(4)/2;          % y midpoint
+    Screen('Preference','SkipSyncTests', 2);
+    maxScreen = max(Screen('Screens'));
+    [ptb_struct.w0, ptb_struct.w0_rect] = ...
+	Screen('OpenWindow',maxScreen, [], [left top right bottom]);
+    
+    ptb_struct.screen_xC = ptb_struct.w0_rect(3)/2;          % x midpoint
+    ptb_struct.screen_yC = ptb_struct.w0_rect(4)/2;          % y midpoint
 
     %fixation coordinates
     xlen = 25;
-    patch_struct.fix_xy = ...
-	[patch_struct.screen_xC, patch_struct.screen_xC, patch_struct.screen_xC+xlen, patch_struct.screen_xC-xlen; ...
-	 patch_struct.screen_yC+xlen, patch_struct.screen_yC-xlen, patch_struct.screen_yC, patch_struct.screen_yC];      
+    ptb_struct.fix_xy = ...
+	[ptb_struct.screen_xC, ptb_struct.screen_xC, ptb_struct.screen_xC+xlen, ptb_struct.screen_xC-xlen; ...
+	 ptb_struct.screen_yC+xlen, ptb_struct.screen_yC-xlen, ptb_struct.screen_yC, ptb_struct.screen_yC];      
 
-    Screen('TextSize', patch_struct.w0, 20);
-    patch_struct.refresh_rate = Screen('GetFlipInterval',patch_struct.w0);
+    Screen('TextSize', ptb_struct.w0, 20);
+    ptb_struct.refresh_rate = Screen('GetFlipInterval',ptb_struct.w0);
     
-    patch_struct.blocks = 10;                 % number of blocks                 
-    patch_struct.trials = 100;               % number of trials per block               
-    patch_struct.total = patch_struct.blocks * patch_struct.trials;    % total number of trials   
+    blocks = 10;
+    trials = 100;
+    total = blocks * trials;
     
-    % saved params
-    exp_struct = setExpValues(answer, patch_struct.total);    
-    
-    %% flags    
-    %patch_struct.exit_experiment = false;
-    patch_struct.save_mode = true;
-    patch_struct.train = true;       %                                             %|
-    patch_struct.delay = true;
+    exp_struct = setExpValues(answer, total);
+    exp_struct.ptb_struct = ptb_struct;
+    exp_struct.blocks = blocks;
+    exp_struct.trials = trials;
+    exp_struct.total = total;
+    exp_struct.delay = 0.1;
+    exp_struct.save_mode = true;
 
-    patch_struct.path_local = pwd; % local path
-    patch_struct.path_local = [ patch_struct.path_local, '/'];
-    src_ndx = strfind(patch_struct.path_local, '/src');
-    patch_struct.path_parent = patch_struct.path_local(1:src_ndx);
+    exp_struct.path_local = [ pwd '/' ]; % local path
+    src_ndx = strfind(exp_struct.path_local, '/src');
+    exp_struct.path_parent = exp_struct.path_local(1:src_ndx);
 
-    %%set background color
-    Screen('FillRect', patch_struct.w0, 128);
-    Screen('Flip', patch_struct.w0);
+    % set background color
+    Screen('FillRect', ptb_struct.w0, 128);
+    Screen('Flip', ptb_struct.w0);
 
-    %%set file name for storing experimental data
-    patch_struct.path_results = ...
-	[patch_struct.path_parent, '/results/'];
-    if ~exist(patch_struct.path_results,'DIR')
-      error(['~exist(patch_struct.path_results,'DIR'): ', ...
-	     patch_struct.path_results]);
+    % set file name for storing experimental data
+    exp_struct.path_results = ...
+	[exp_struct.path_parent, 'results/'];
+    if ~exist(exp_struct.path_results,'dir')
+      error(['~exist(): ', exp_struct.path_results]);
     end
+    
     if strcmp(button,'Yes')
-      patch_struct.path_exp = [patch_struct.path_results, '/official/'];
+      exp_struct.path_exp = [exp_struct.path_results, 'official/'];
     else
-      patch_struct.path_exp = [patch_struct.path_results, '/tmp/'];
+      exp_struct.path_exp = [exp_struct.path_results, 'tmp/'];
     end
-    patch_struct.exp_file = ...
-	[patch_struct.path_exp, num2str(round(exp_struct.seed))];
+    exp_struct.exp_file = ...
+	    [exp_struct.path_exp, num2str(round(exp_struct.seed))];
 
-    %%setup images
-    %% assume all paths relative to current directory
+    % setup images
+    % assume all paths relative to current directory
     
-    patch_struct.path_root = [patch_struct.path_local, '/data/']; 
-    if ~exist(patch_struct.path_root,'DIR')
-      error(['~exist('data','DIR): ', patch_struct.path_root]);
+    exp_struct.path_data = [exp_struct.path_parent, 'data/']; 
+    if ~exist(exp_struct.path_data,'dir')
+      error(['~exist(): ', exp_struct.path_data]);
     end
     
-    patch_struct.path_stim = [patch_struct.path_root, '/ALLSTIMULI/']; 
-    if ~exist(patch_struct.path_stim,'DIR')
-      error(['~exist('ALLSTIMULI','DIR'): ', patch_struct.path_stim]);
+    exp_struct.path_stim = [exp_struct.path_data, 'ALLSTIMULI/']; 
+    if ~exist(exp_struct.path_stim,'dir')
+      error(['~exist(): ', exp_struct.path_stim]);
     end
-    patch_struct.imgs  = dir([patch_struct.path_stim, '*.jpeg']);
+    exp_struct.imgs  = dir([exp_struct.path_stim, '*.jpeg']);
     
-    patch_struct.path_patches = [patch_struct.path_root, '/PATCHES4/']; 
-    if ~exist(patch_struct.path_patches,'DIR')
-      error(['~exist('PATCHES4','DIR'): ', patch_struct.path_patches]);
-    end
-    patch_struct.ptchs  = dir([patch_struct.path_patches, '*.jpeg']);
-
-    contrast_match_flag = 1;
-    [patch_struct.lft_ndx patch_struct.rgt_ndx] = ...
-	contrastMatch(patch_struct,contrast_match_flag);
-
+    % Load patchData
+    load([exp_struct.path_data 'patchData.mat'])
+    exp_struct.patch_data = patchData;
     
-    
-    %% draw an equal number of high and low salience images
-    exp_struct.hl_ndx = ...
-	Shuffle([zeros(patch_struct.total/2,1); ones(patch_struct.total/2,1)]);
+    % Contrast match images
+    contrast_match_flag = 0; % If 0, loads medPI.mat from data directory
+    [exp_struct.trials.lft_ndx exp_struct.trials.rgt_ndx] = ...
+	contrastMatch(exp_struct, contrast_match_flag);
 
-    %% save everything
-    exp_struct.patch_struct = patch_struct;
-
-    %% start experiment
-    instr(patch_struct.w0);
-    exp_struct = experiment(button, p);
+    % start experiment
+    instr(ptb_struct.w0);
+    experiment();
     Screen('CloseAll');
-    exp.p = p;  %% save everything!
 end  
 
 
 function exp_struct = setExpValues(answer, tot)    
 
     nflips = 3;
+
+    trial_struct = struct(...
+        'target_ndx', zeros(total, 1), ...
+        'lft_ndx', zeros(total, 1), ...
+        'rgt_ndx', zeros(total, 1), ...
+        'choice', zeros(total, 1), ...
+        'confidence', zeros(total, 1), ...
+        'correct', zeros(total, 1) ...
+    );
 
     exp_struct = struct( ...
         'vision', answer{1}, ...
@@ -137,7 +137,7 @@ function exp_struct = setExpValues(answer, tot)
         'FlipTimestamp', zeros(tot, nflips), ...
         'Missed', zeros(tot, nflips), ...
         'Beampos', zeros(tot, nflips), ...
-	'ptch_ndx', zeros(tot,1));
+        'trials', trial_struct);
     
     % draw the target patch from the left or right image with equal
     % probability
@@ -145,8 +145,6 @@ function exp_struct = setExpValues(answer, tot)
     exp_struct.seed = sum(100*clock);
     rand('twister', exp_struct.seed);     
     exp_struct.target_flag = Shuffle([ones(tot/2,1); zeros(tot/2,1)]);
-    exp_struct.key_name = cell(tot,1);
-    exp_struct.pairs = cell(tot,3);
 end
 
 

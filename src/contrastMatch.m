@@ -27,9 +27,9 @@ function [lft_ndx rgt_ndx] = contrastMatch(patch_struct,flag)
                 disp(num2str(i));
             end
          end
-       save [patch_struct.path_stim, 'medPI'] mI mp rmsc  
+       save([patch_struct.path_data, 'medPI'], 'mI', 'mp', 'rmsc')  
     else
-        load [patch_struct.path_stim, 'medPI']
+        load([patch_struct.path_data, 'medPI'])
     end
 
     % sort in ascending order
