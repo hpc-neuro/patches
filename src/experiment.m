@@ -1,9 +1,9 @@
 % experiment handles the preparation of the stimulus and the mask.  
 % It also calls post-presentation functions. 
 
-function experiment(button, p)
+function exp_struct = experiment(button, p)
     
-    global exit_experiment exp train
+    global exit_experiment exp_struct train
     
     bar = createBar(p.w0_rect);
     block = 1;
@@ -33,19 +33,19 @@ function experiment(button, p)
 	rght_name = p.imgs(p.rgt_ndx(i)).name;
         
 	% left = 1   right = 0
-        if exp.target_flag(i)
+        if exp_struct.target_flag(i)
 	    base = p.lft_ndx(i);
 	else
 	    base = p.rgt_ndx(i);
 	end
 
 	% high = 0    low = 1 
-	exp.ptch_ndx(i) = 2*(base-1)+1+exp.hl_ndx(i);
+	exp_struct.ptch_ndx(i) = 2*(base-1)+1+exp_struct.hl_ndx(i);
 	    
-	ptch_name = p.ptchs(exp.ptch_ndx(i)).name;
-	exp.pairs{i,1} = left_name;
-	exp.pairs{i,2} = rght_name;
-	exp.pairs{i,3} = ptch_name;
+	ptch_name = p.ptchs(exp_struct.ptch_ndx(i)).name;
+	exp_struct.pairs{i,1} = left_name;
+	exp_struct.pairs{i,2} = rght_name;
+	exp_struct.pairs{i,3} = ptch_name;
 
         im_left = col2gray(imread([p.path_s left_name]));
         im_rght = col2gray(imread([p.path_s rght_name]));
@@ -87,16 +87,16 @@ function experiment(button, p)
         % returned by keypress from the before timestamp
         % sD is the error term
         %s0 = GetSecs;
-        %[exp.choice(i) exp.key_name{i} sN sD] = keyPress(w0, i, exp, block);
-        [exp.choice(i) exp.confidence(i)] = responseBar(p, bar, i, exp, block);
-        %exp.response_time(i, :) = [(sN-s0) sD];
+        %[exp_struct.choice(i) exp_struct.key_name{i} sN sD] = keyPress(w0, i, exp_struct, block);
+        [exp_struct.choice(i) exp_struct.confidence(i)] = responseBar(p, bar, i, exp_struct, block);
+        %exp_struct.response_time(i, :) = [(sN-s0) sD];
 	%spacepress;
 	% draw the fixation lines
 	Screen('DrawLines', p.w0, p.fix_xy, 2);
 	
-	[exp.VBLTimestamp(i,3) exp.StimulusOnsetTime(i,3) ...
-	 exp.FlipTimestamp(i,3) exp.Missed(i,3) ...
-	 exp.Beampos(i,3)] = Screen('Flip', p.w0);
+	[exp_struct.VBLTimestamp(i,3) exp_struct.StimulusOnsetTime(i,3) ...
+	 exp_struct.FlipTimestamp(i,3) exp_struct.Missed(i,3) ...
+	 exp_struct.Beampos(i,3)] = Screen('Flip', p.w0);
 	
 
         if exit_experiment
@@ -125,7 +125,7 @@ function experiment(button, p)
     end
 
     if p.save_mode || strcmp(button, 'Yes')
-        save(p.data_file, 'exp');
+        save(p.data_file, 'exp_struct');
     end
 
    %ListenChar(0);
