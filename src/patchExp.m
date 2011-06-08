@@ -18,15 +18,14 @@ function patchExp()
     % MacOS-X naming scheme   
     
     [button answer] = getInfo;
-
       
-    % unsaved params
+    % unsaved params %% should save p to exp
     p = struct();
     
     % init window
-    Screen('Preference','SkipSyncTests', 1);
+    %Screen('Preference','SkipSyncTests', 1);
     maxScreen = max(Screen('Screens'));
-    [p.w0, p.w0_rect] = Screen('OpenWindow',maxScreen, [], [0 0 1024 768]);
+    [p.w0, p.w0_rect] = Screen('OpenWindow',maxScreen);%, [], [0 0 400 400]);
     
     p.screen_xC = p.w0_rect(3)/2;          % x midpoint
     p.screen_yC = p.w0_rect(4)/2;          % y midpoint
@@ -36,12 +35,12 @@ function patchExp()
     p.fix_xy = [p.screen_xC, p.screen_xC, p.screen_xC+xlen, p.screen_xC-xlen; ...
 		p.screen_yC+xlen, p.screen_yC-xlen, p.screen_yC, p.screen_yC];      
 
-    Screen('TextSize', p.w0, 20);
+    Screen('TextSize', p.w0, 14);
     p.refresh_rate = Screen('GetFlipInterval',p.w0);
     
     p.blocks = 10;                 % number of blocks                 
     p.trials = 100;               % number of trials per block               
-    p.total = p.blocks * p.trials;    % total number of trials
+    p.total = p.blocks * p.trials;    % total number of trials   
     
     % saved params
     exp = setExpValues(answer, p.total);    
@@ -53,36 +52,56 @@ function patchExp()
     p.delay = true;
 
     if strcmp(button,'Yes')
-	p.data_file = ['../results/official/', num2str(round(exp.seed))];
+        p.data_file = ['..\results\official\', num2str(round(exp.seed))];
     else
-	p.data_file = ['../results/tmp/', num2str(round(exp.seed))];
+        p.data_file = ['..\results\tmp\', num2str(round(exp.seed))];
     end
 
     %set background color
     Screen('FillRect', p.w0, 128);
     Screen('Flip', p.w0);
 
-    %setup images
-    p.path_r = '../data/';
-    p.path_s = [p.path_r 'ALLSTIMULI/'];
-    p.path_p = [p.path_r 'PATCHES/'];
-    p.imgs  = dir([p.path_s '*.jpeg']);
-    p.ptchs = dir([p.path_p '*.jpeg']);
+    %%setup images
+    %% assume all paths relative to current directory
+    p.path_l = pwd; % local path
+    
+    if ~exist('data','DIR)
+      error('~exist('data','DIR)');
+    end
+    chdir('data');
+    p.path_r = pwd; % root_path
+    
+    if ~exist('ALLSTIMULI','DIR)
+      error('~exist('ALLSTIMULI','DIR)');
+    end
+    chdir('ALLSTIMULI');
+    p.path_s = pwd; % directory containing full images
+    p.imgs  = dir('*.jpeg');
+    
+    cd ..
+    if ~exist('PATCHES4','DIR)
+      error('~exist('PATCHES4','DIR)');
+    end
+    chdir('PATCHES4'); 
+    p.path_p = pwd; % directory containing patches
+    p.ptchs  = dir('*.jpeg');
+    chdir p.path_l;
 
     % make sure that the left and right images are different
-    s = 1;
-    while (s > 0)
-	p.lft_ndx = Shuffle(1:p.total);
-	p.rgt_ndx = Shuffle(1:p.total);
-	s = sum(p.lft_ndx == p.rgt_ndx);
-    end
-
+%     s = 1;
+%     while (s > 0)
+% 	p.lft_ndx = Shuffle(1:p.total);
+% 	p.rgt_ndx = Shuffle(1:p.total);
+% 	s = sum(p.lft_ndx == p.rgt_ndx);
+%     end
+    [p.lft_ndx p.rgt_ndx] = contrstMatch(p,false);
     % draw an equal number of high and low salience images
     exp.hl_ndx = Shuffle([zeros(p.total/2,1); ones(p.total/2,1)]);
     %% start experiment
     instr(p.w0);
     experiment(button, p);
     Screen('CloseAll');
+    exp.p = p;  %% save everything!
 end  
 
 

@@ -3,21 +3,22 @@
 
 function experiment(button, p)
     
-    global exit_experiment exp train
+    global exit_experiment exp
     
     bar = createBar(p.w0_rect);
     block = 1;
     exit_experiment = 0;
 
-    for i = 1:p.total
-        if mod(i,p.trials) == 0 && i < p.total
-            block = block + 1;
+    for i = 1:p.total/2
+        if mod(i,p.trials) == 0 && i < p.total/2  % p.total
+          block = block + 1;
+	  % block = ceil( i / p.trials );
         	
         elseif mod(i,p.trials) == 1 && i < p.total
             if i > 1
                 break_str = ...
                     sprintf('%s\n\n', ...
-			    ['You have just completed block ' num2str(block) ' of ' num2str(p.blocks) '.'], ...
+			    ['You have just completed block ' num2str(block-1) ' of ' num2str(p.blocks) '.'], ...
 			    'You may take a short break.');
             else
                 break_str = ...
@@ -27,17 +28,18 @@ function experiment(button, p)
 	    DrawFormattedText(p.w0, break_str, 'center', 'center');
             Screen('Flip',p.w0);
 	    spacePress;
+	    pause(2); % give user a pause before next trial begins
         end
 
         left_name = p.imgs(p.lft_ndx(i)).name;
 	rght_name = p.imgs(p.rgt_ndx(i)).name;
         
 	% left = 1   right = 0
-        if exp.target_flag(i)
-	    base = p.lft_ndx(i);
-	else
-	    base = p.rgt_ndx(i);
-	end
+    if exp.target_flag(i)
+        base = p.lft_ndx(i);
+    else
+        base = p.rgt_ndx(i);
+    end
 
 	% high = 0    low = 1 
 	exp.ptch_ndx(i) = 2*(base-1)+1+exp.hl_ndx(i);
@@ -47,10 +49,10 @@ function experiment(button, p)
 	exp.pairs{i,2} = rght_name;
 	exp.pairs{i,3} = ptch_name;
 
-        im_left = col2gray(imread([p.path_s left_name]));
-        im_rght = col2gray(imread([p.path_s rght_name]));
-	im_ptch = imread([p.path_p ptch_name]);
-       
+    im_left = col2gray(imread([p.path_s left_name]));
+    im_rght = col2gray(imread([p.path_s rght_name]));
+    im_ptch = imread([p.path_p ptch_name]);
+    
 	%figure, imshow([p.path_s left_name]);
 
         if p.delay
@@ -64,22 +66,18 @@ function experiment(button, p)
         rght_tex = Screen('MakeTexture', p.w0, im_rght); 
         p.ptch_tex = Screen('MakeTexture', p.w0, im_ptch);
         
-        l_rect = fndrect(im_left,1,p.screen_xC,p.screen_yC,500);
-        r_rect = fndrect(im_rght,0,p.screen_xC,p.screen_yC,500);
-
-	%l_rect = [228 256 484 512];
-	%r_rect = [540 256 796 512];
-
-        % draw the imagx[e texture to the backbuffer
-        Screen('DrawTexture', p.w0, left_tex, [], l_rect);
-        Screen('DrawTexture', p.w0, rght_tex, [], r_rect);
+      %  l_rect = fndrect(im_left,1,p.screen_xC,p.screen_yC,500);
+      %  r_rect = fndrect(im_rght,0,p.screen_xC,p.screen_yC,500);
+    
+      % draw the imagx[e texture to the backbuffer
+        Screen('DrawTexture', p.w0, left_tex);%, [], l_rect);
+        %Screen('DrawTexture', p.w0, rght_tex, [], r_rect);
                 
         % draw image
         max_priority = MaxPriority(p.w0);
         
-        %WaitSecs(.5);
-        
-        Rush('stimFlip(train, delay, l_rect, r_rect, i, p, bar)', max_priority );
+        Rush('stimFlip(delay, i, p)', max_priority );
+        Rush('stimFlip(delay, i, p,rght_tex)', max_priority );
 
         %% reaction time
         % reaction time is approximated by taking a timestamp
