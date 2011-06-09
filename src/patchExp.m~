@@ -3,94 +3,127 @@
 
 function patchExp()
     
-    global exp
-    
-    %  addpath('Users/petavision/neuro_comp/dev/sosB/utilsB');
-    
+    global exp_struct 
+        
     % w0 is the window pointer
     % w0_rect is a 4-element array containing the x,y coordinates of the
     %   upper left and lower right corners of the screen   n   
     % w,h are the x,y midpoints of the screen
-    % exp is a data structure containing relevant experimental values
+    % exp_struct is a data structure containing relevant experimental values
     % these functions will not work because of a problem with java
     % ListenChar(2);              % prevents key stokes from displaying
     % KbName('UnifyKeyNames');    % Switches internal naming scheme to
     % MacOS-X naming scheme   
     
-    [button answer] = getInfo;
-
-      
-    % unsaved params
-    p = struct();
+    [button answer] = getInfo;    
+    
+    ptb_struct = struct(); % psych toolbox related parameters
     
     % init window
-    Screen('Preference','SkipSyncTests', 1);
-    maxScreen = max(Screen('Screens'));
-    [p.w0, p.w0_rect] = Screen('OpenWindow',maxScreen, [], [0 0 1024 768]);
+    width = 1024;
+    height = 768;
+    top = 0;
+    left = 1680;
+    bottom = top + height;
+    right = left + width;
     
-    p.screen_xC = p.w0_rect(3)/2;          % x midpoint
-    p.screen_yC = p.w0_rect(4)/2;          % y midpoint
+    Screen('Preference','SkipSyncTests', 2);
+    maxScreen = max(Screen('Screens'));
+    [ptb_struct.w0, ptb_struct.w0_rect] = ...
+	Screen('OpenWindow',maxScreen, [], [left top right bottom]);
+    
+    ptb_struct.screen_xC = ptb_struct.w0_rect(3)/2;          % x midpoint
+    ptb_struct.screen_yC = ptb_struct.w0_rect(4)/2;          % y midpoint
 
     %fixation coordinates
     xlen = 25;
-    p.fix_xy = [p.screen_xC, p.screen_xC, p.screen_xC+xlen, p.screen_xC-xlen; ...
-		p.screen_yC+xlen, p.screen_yC-xlen, p.screen_yC, p.screen_yC];      
+    ptb_struct.fix_xy = ...
+	[ptb_struct.screen_xC, ptb_struct.screen_xC, ptb_struct.screen_xC+xlen, ptb_struct.screen_xC-xlen; ...
+	 ptb_struct.screen_yC+xlen, ptb_struct.screen_yC-xlen, ptb_struct.screen_yC, ptb_struct.screen_yC];      
 
-    Screen('TextSize', p.w0, 20);
-    p.refresh_rate = Screen('GetFlipInterval',p.w0);
+    Screen('TextSize', ptb_struct.w0, 20);
+    ptb_struct.refresh_rate = Screen('GetFlipInterval',ptb_struct.w0);
     
-    p.blocks = 10;                 % number of blocks                 
-    p.trials = 100;               % number of trials per block               
-    p.total = p.blocks * p.trials;    % total number of trials
+    blocks = 5;
+    trials = 100;
+    total = blocks * trials;
     
-    % saved params
-    exp = setExpValues(answer, p.total);    
-    
-    %% flags    
-    %p.exit_experiment = false;
-    p.save_mode = true;
-    p.train = true;       %                                             %|
-    p.delay = true;
+    exp_struct = setExpValues(answer, total);
+    exp_struct.ptb_struct = ptb_struct;
+    exp_struct.blocks = blocks;
+    exp_struct.trials = trials;
+    exp_struct.total = total;
+    exp_struct.delay = 0.1;
+    exp_struct.save_mode = true;
 
+    exp_struct.path_local = [ pwd '/' ]; % local path
+    src_ndx = strfind(exp_struct.path_local, '/src');
+    exp_struct.path_parent = exp_struct.path_local(1:src_ndx);
+
+    % set background color
+    Screen('FillRect', ptb_struct.w0, 128);
+    Screen('Flip', ptb_struct.w0);
+
+    % set file name for storing experimental data
+    exp_struct.path_results = ...
+	[exp_struct.path_parent, 'results/'];
+    if ~exist(exp_struct.path_results,'dir')
+      error(['~exist(): ', exp_struct.path_results]);
+    end
+    
     if strcmp(button,'Yes')
-	p.data_file = ['../results/official/', num2str(round(exp.seed))];
+      exp_struct.path_exp = [exp_struct.path_results, 'official/'];
     else
-	p.data_file = ['../results/tmp/', num2str(round(exp.seed))];
+      exp_struct.path_exp = [exp_struct.path_results, 'tmp/'];
     end
+    exp_struct.exp_file = ...
+	    [exp_struct.path_exp, num2str(round(exp_struct.seed))];
 
-    %set background color
-    Screen('FillRect', p.w0, 128);
-    Screen('Flip', p.w0);
-
-    %setup images
-    p.path_r = '/Users/sb/neuro_comp/tjudd/';
-    p.path_s = [p.path_r 'ALLSTIMULI/'];
-    p.path_p = [p.path_r 'PATCHES/'];
-    p.imgs  = dir([p.path_s '*.jpeg']);
-    p.ptchs = dir([p.path_p '*.jpeg']);
-
-    % make sure that the left and right images are different
-    s = 1;
-    while (s > 0)
-	p.lft_ndx = Shuffle(1:p.total);
-	p.rgt_ndx = Shuffle(1:p.total);
-	s = sum(p.lft_ndx == p.rgt_ndx);
+    % setup images
+    % assume all paths relative to current directory
+    
+    exp_struct.path_data = [exp_struct.path_parent, 'data/']; 
+    if ~exist(exp_struct.path_data,'dir')
+      error(['~exist(): ', exp_struct.path_data]);
     end
+    
+    exp_struct.path_stim = [exp_struct.path_data, 'ALLSTIMULI/']; 
+    if ~exist(exp_struct.path_stim,'dir')
+      error(['~exist(): ', exp_struct.path_stim]);
+    end
+    exp_struct.imgs  = dir([exp_struct.path_stim, '*.jpeg']);
+    
+    % Load patchData
+    load([exp_struct.path_data 'patchData.mat'])
+    exp_struct.patch_data = patchData;
+    
+    % Contrast match images
+    contrast_match_flag = 0; % If 0, loads medPI.mat from data directory
+    [exp_struct.trials.lft_ndx exp_struct.trials.rgt_ndx] = ...
+	contrastMatch(exp_struct, contrast_match_flag);
 
-    % draw an equal number of high and low salience images
-    exp.hl_ndx = Shuffle([zeros(p.total/2,1); ones(p.total/2,1)]);
-    %% start experiment
-    instr(p.w0);
-    experiment(button, p);
+    % start experiment
+    instr(ptb_struct.w0);
+    experiment();
     Screen('CloseAll');
 end  
 
 
-function exp = setExpValues(answer, tot)    
+function exp_struct = setExpValues(answer, tot)    
 
     nflips = 3;
 
-    exp = struct( ...
+    trial_struct = struct(...
+        'target_ndx', zeros(total, 1), ...
+        'lft_ndx', zeros(total, 1), ...
+        'rgt_ndx', zeros(total, 1), ...
+        'choice', zeros(total, 1), ...
+        'confidence', zeros(total, 1), ...
+        'correct', zeros(total, 1), ...
+        'xfactors', cell(total, 1) ...
+    );
+
+    exp_struct = struct( ...
         'vision', answer{1}, ...
         'age', answer{2}, ...
         'gender', answer{3}, ...
@@ -105,16 +138,14 @@ function exp = setExpValues(answer, tot)
         'FlipTimestamp', zeros(tot, nflips), ...
         'Missed', zeros(tot, nflips), ...
         'Beampos', zeros(tot, nflips), ...
-	'ptch_ndx', zeros(tot,1));
+        'trials', trial_struct);
     
     % draw the target patch from the left or right image with equal
     % probability
     % random number generator
-    exp.seed = sum(100*clock);
-    rand('twister', exp.seed);     
-    exp.target_flag = Shuffle([ones(tot/2,1); zeros(tot/2,1)]);
-    exp.key_name = cell(tot,1);
-    exp.pairs = cell(tot,3);
+    exp_struct.seed = sum(100*clock);
+    rand('twister', exp_struct.seed);     
+    exp_struct.target_flag = Shuffle([ones(tot/2,1); zeros(tot/2,1)]);
 end
 
 

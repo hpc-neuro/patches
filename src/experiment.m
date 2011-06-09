@@ -1,16 +1,16 @@
 % experiment handles the preparation of the stimulus and the mask.
 % It also calls post-presentation functions.
 
-function experiment(button, patch_struct)
+function experiment()
 
 global exit_experiment exp_struct
 
-bar = createBar(patch_struct.w0_rect);
+bar = createBar(ptb_struct.w0_rect);
 block = 1;
 exit_experiment = 0;
 
-for i = 1:patch_struct.total/2
-    if mod(i,patch_struct.trials) == 0 && i < patch_struct.total/2
+for i = 1:exp_struct.total
+    if mod(i,exp_struct.trials) == 0 && i < patch_struct.total/2
         block = block + 1;
         
     elseif mod(i,patch_struct.trials) == 1
@@ -113,7 +113,7 @@ for i = 1:patch_struct.total/2
     % idisp(i);
 end
 
-if patch_struct.save_mode || strcmp(button, 'Yes')
+if patch_struct.save_mode
     save(patch_struct.data_file, 'exp_struct');
 end
 
