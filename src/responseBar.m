@@ -45,11 +45,11 @@ while ~any(press)
     if x < xC
         side = 'left';
         txt_x = text_l;
-        choice = 1;
+        choice = 0;
     elseif x > xC
         side = 'right';
         txt_x = text_r;
-        choice = 0;
+        choice = 1;
     else
         side = 'neither';
     end
@@ -112,11 +112,11 @@ while ~any(press)
                         break;
                         
                     case 'right'
-                        choice = 0;
+                        choice = 1;
                         break;  
                         
                     case 'left'
-                        choice = 1;
+                        choice = 0;
                         break;
                 end
                 
@@ -129,7 +129,7 @@ while ~any(press)
         end
     end
     
-    Screen('DrawTexture', p.w0, p.ptch_tex);
+    Screen('DrawTexture', p.w0, p.patch_tex);
     Screen('Flip',p.w0);
     
 end

@@ -18,8 +18,7 @@ function patchExp()
     [button answer] = getInfo;    
     
     ptb_struct = struct(); % psych toolbox related parameters
-    ptb_struct.official_flag = strcmp(button,'Yes');
-    
+
     % init window
     width = 1024;
     height = 768;
@@ -46,20 +45,29 @@ function patchExp()
     ptb_struct.refresh_rate = Screen('GetFlipInterval',ptb_struct.w0);
     
     blocks = 10;
-    trials = 100;
+    trials = 50;
     total = blocks * trials;
     
     exp_struct = setExpValues(answer, total);
     exp_struct.ptb_struct = ptb_struct;
+    exp_struct.official_flag = strcmp(button,'Yes');
     exp_struct.blocks = blocks;
     exp_struct.trials = trials;
     exp_struct.total = total;
     exp_struct.delay = 0.1;
     exp_struct.save_mode = true;
-
+    
+    % Experiment-specific additions to trial_struct
+    exp_struct.trial_struct.patch_struct = cell(total, 1);
+        
     exp_struct.path_local = [ pwd '/' ]; % local path
     src_ndx = strfind(exp_struct.path_local, '/src');
     exp_struct.path_parent = exp_struct.path_local(1:src_ndx);
+    
+    exp_struct.ding = wavread([exp_struct.path_parent 'ding.wav']);
+    exp_struct.buzzer = wavread([exp_struct.path_parent 'buzzer.wav']);
+    exp_struct.ding_rate = 11025;
+    exp_struct.buzzer_rate = 44100;
 
     % set background color
     Screen('FillRect', ptb_struct.w0, 128);
@@ -82,7 +90,6 @@ function patchExp()
 
     % setup images
     % assume all paths relative to current directory
-    
     exp_struct.path_data = [exp_struct.path_parent, 'data/']; 
     if ~exist(exp_struct.path_data,'dir')
       error(['~exist(): ', exp_struct.path_data]);
@@ -100,8 +107,11 @@ function patchExp()
     
     % Contrast match images
     contrast_match_flag = 0; % If 0, loads medPI.mat from data directory
-    [exp_struct.trials.lft_ndx exp_struct.trials.rgt_ndx] = ...
+    [lft_ndx rgt_ndx] = ...
 	contrastMatch(exp_struct, contrast_match_flag);
+    
+    exp_struct.trial_struct.lft_ndx = lft_ndx;
+    exp_struct.trial_struct.rgt_ndx = rgt_ndx;
 
     % start experiment
     instr(ptb_struct.w0);
@@ -114,15 +124,20 @@ function exp_struct = setExpValues(answer, tot)
 
     nflips = 3;
 
-    trial_struct = struct(...
-        'target_ndx', zeros(total, 1), ...
-        'lft_ndx', zeros(total, 1), ...
-        'rgt_ndx', zeros(total, 1), ...
-        'choice', zeros(total, 1), ...
-        'confidence', zeros(total, 1), ...
-        'correct', zeros(total, 1), ...
-        'xfactors', cell(total, 1) ...
-    );
+    trial_struct = struct();
+    trial_struct.target_ndx = zeros(tot, 1);
+    trial_struct.lft_ndx = zeros(tot, 1);
+    trial_struct.rgt_ndx = zeros(tot, 1);
+    trial_struct.choice = zeros(tot, 1);
+    trial_struct.confidence = zeros(tot, 1);
+    trial_struct.correct = zeros(tot, 1);
+    trial_struct.xfactors = cell(tot, 1);
+    % draw the target patch from the left or right image with equal
+    % probability
+    % random number generator
+    seed = sum(100*clock);
+    rand('twister', seed);     
+    trial_struct.target_flag = Shuffle([ones(tot/2,1); zeros(tot/2,1)]);
 
     exp_struct = struct( ...
         'vision', answer{1}, ...
@@ -139,14 +154,9 @@ function exp_struct = setExpValues(answer, tot)
         'FlipTimestamp', zeros(tot, nflips), ...
         'Missed', zeros(tot, nflips), ...
         'Beampos', zeros(tot, nflips), ...
-        'trials', trial_struct);
+        'trial_struct', trial_struct, ...
+        'seed', seed);
     
-    % draw the target patch from the left or right image with equal
-    % probability
-    % random number generator
-    exp_struct.seed = sum(100*clock);
-    rand('twister', exp_struct.seed);     
-    exp_struct.target_flag = Shuffle([ones(tot/2,1); zeros(tot/2,1)]);
 end
 
 

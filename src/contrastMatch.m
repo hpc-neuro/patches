@@ -12,8 +12,6 @@ function [lft_ndx rgt_ndx] = contrastMatch(patch_struct,flag)
     rmsc = zeros(lenI,1);
     nbins = 25;
     nreps = lenI/nbins/2;
-    lft_nd = zeros(nbins,nreps);
-    rgt_nd = zeros(nbins,nreps);
     
     if flag
         % calculate the median pixel intensity for each image
