@@ -18,6 +18,7 @@ function patchExp()
     [button answer] = getInfo;    
     
     ptb_struct = struct(); % psych toolbox related parameters
+    ptb_struct.official_flag = strcmp(button,'Yes');
     
     % init window
     width = 1024;
