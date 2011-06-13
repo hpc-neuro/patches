@@ -22,6 +22,10 @@ function stimFlip(delay, trial, ptb_struct, rgt_tex)
     % Beampos is the position of the raster beam
     if nargin == 3
         t0 = GetSecs;
+        if exp_struct.eye_tracking
+            Eyelink('Message', ['show_left_' num2str(trial) ]);
+        end
+
         % Flip the stimulus
         [exp_struct.VBLTimestamp(trial, 1) exp_struct.StimulusOnsetTime(trial, 1) ...
             exp_struct.FlipTimestamp(trial, 1) exp_struct.Missed(trial, 1) ...
@@ -29,6 +33,9 @@ function stimFlip(delay, trial, ptb_struct, rgt_tex)
         
     elseif nargin == 4
         Screen('DrawTexture', ptb_struct.w0, rgt_tex);
+        if exp_struct.eye_tracking
+            Eyelink('Message', ['show_right_' num2str(trial) ]);
+        end
         % Flip the mask
         [exp_struct.VBLTimestamp(trial, 2) exp_struct.StimulusOnsetTime(trial, 2) ...
             exp_struct.FlipTimestamp(trial, 2) exp_struct.Missed(trial, 2) ...
@@ -37,9 +44,12 @@ function stimFlip(delay, trial, ptb_struct, rgt_tex)
         
         % if there is intermediate gray (that is, gray between the stimulus and
         % mask) then there is one more flip is required
-        
         Screen('DrawTexture', ptb_struct.w0, ptb_struct.patch_tex);
         
+        if exp_struct.eye_tracking
+            Eyelink('Message', ['show_patch_' num2str(1) ]);
+        end
+
         % Flip the mask
         [exp_struct.VBLTimestamp(trial, 3) exp_struct.StimulusOnsetTime(trial, 3) ...
             exp_struct.FlipTimestamp(trial, 3) exp_struct.Missed(trial, 3) ...

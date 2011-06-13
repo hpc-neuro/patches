@@ -4,6 +4,10 @@
 function patchExp()
     
     global exp_struct 
+    
+    eye_tracking = 1;
+    dummy_eyes = 1;
+    sound = 1;
         
     % w0 is the window pointer
     % w0_rect is a 4-element array containing the x,y coordinates of the
@@ -48,7 +52,7 @@ function patchExp()
     trials = 50;
     total = blocks * trials;
     
-    exp_struct = setExpValues(answer, total);
+    exp_struct = setExpValues(answer, total, 2);
     exp_struct.ptb_struct = ptb_struct;
     exp_struct.official_flag = strcmp(button,'Yes');
     exp_struct.blocks = blocks;
@@ -64,10 +68,13 @@ function patchExp()
     src_ndx = strfind(exp_struct.path_local, '/src');
     exp_struct.path_parent = exp_struct.path_local(1:src_ndx);
     
-    exp_struct.ding = wavread([exp_struct.path_parent 'ding.wav']);
-    exp_struct.buzzer = wavread([exp_struct.path_parent 'buzzer.wav']);
-    exp_struct.ding_rate = 11025;
-    exp_struct.buzzer_rate = 44100;
+    exp_struct.sound = sound;
+    if sound
+        exp_struct.ding = wavread([exp_struct.path_parent 'ding.wav']);
+        exp_struct.buzzer = wavread([exp_struct.path_parent 'buzzer.wav']);
+        exp_struct.ding_rate = 11025;
+        exp_struct.buzzer_rate = 44100;
+    end
 
     % set background color
     Screen('FillRect', ptb_struct.w0, 128);
@@ -113,14 +120,40 @@ function patchExp()
     exp_struct.trial_struct.lft_ndx = lft_ndx;
     exp_struct.trial_struct.rgt_ndx = rgt_ndx;
 
+    % set up eye tracking
+    exp_struct.eye_tracking = eye_tracking;
+    if eye_tracking
+        exp_struct.dummy_eyes = dummy_eyes;
+        exp_struct.ptb_struct.el = EyelinkInitDefaults(exp_struct.ptb_struct.w0);
+        if ~EyelinkInit(dummy_eyes);
+            error('Eyelink Init aborted.');
+            cleanup;
+            return;
+        end
+        
+        Eyelink('command', 'link_sample_data = LEFT,RIGHT,GAZE,AREA');
+        Eyelink('Openfile', 'demo.edf');
+        EyelinkDoTrackerSetup(exp_struct.ptb_struct.el);
+        EyelinkDoDriftCorrection(exp_struct.ptb_struct.el);  
+        WaitSecs(0.1);
+        Eyelink('StartRecording');
+
+        eye_used = Eyelink('EyeAvailable'); % get eye that's tracked
+        if eye_used == exp_struct.ptb_struct.el.BINOCULAR; % if both eyes are tracked
+            eye_used = exp_struct.ptb_struct.el.LEFT_EYE; % use left eye
+        end
+        exp_struct.eye_used = eye_used;
+        
+    end
+    
     % start experiment
-    instr(ptb_struct.w0);
+    instr(exp_struct.ptb_struct.w0);
     experiment();
     Screen('CloseAll');
 end  
 
 
-function exp_struct = setExpValues(answer, tot)    
+function exp_struct = setExpValues(answer, tot, n_factors)    
 
     nflips = 3;
 
@@ -131,12 +164,12 @@ function exp_struct = setExpValues(answer, tot)
     trial_struct.choice = zeros(tot, 1);
     trial_struct.confidence = zeros(tot, 1);
     trial_struct.correct = zeros(tot, 1);
-    trial_struct.xfactors = cell(tot, 1);
+    trial_struct.x_factors = zeros(tot, n_factors);
     % draw the target patch from the left or right image with equal
     % probability
     % random number generator
     seed = sum(100*clock);
-    rand('twister', seed);     
+    rand('twister', seed);
     trial_struct.target_flag = Shuffle([ones(tot/2,1); zeros(tot/2,1)]);
 
     exp_struct = struct( ...
@@ -147,8 +180,6 @@ function exp_struct = setExpValues(answer, tot)
         'participation', answer{5}, ...
         'familiarity', answer{6}, ...
         'response_time', zeros(tot, 2), ...
-        'choice', repmat(10, tot, 1), ...
-        'confidence', zeros(tot,1), ...
         'VBLTimestamp', zeros(tot, nflips), ...
         'StimulusOnsetTime', zeros(tot, nflips), ...
         'FlipTimestamp', zeros(tot, nflips), ...

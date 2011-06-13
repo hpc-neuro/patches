@@ -11,6 +11,10 @@ exit_experiment = 0;
 
 delay = exp_struct.delay;
 
+if exp_struct.eye_tracking
+    Eyelink('Message', 'Start');
+end
+
 for i = 1:exp_struct.total
     i_mod_trials = mod(i, exp_struct.trials);
     if i_mod_trials == 0 && i < exp_struct.total
@@ -29,7 +33,7 @@ for i = 1:exp_struct.total
                 'Press the Space Bar to begin.');
         end
         DrawFormattedText(exp_struct.ptb_struct.w0, break_str, 'center', 'center');
-        Screen('Flip',exp_struct.ptb_struct.w0);
+        Screen('Flip', exp_struct.ptb_struct.w0);
         spacePress;
         pause(2); % give user a pause before next trial begins
     end
@@ -78,12 +82,13 @@ for i = 1:exp_struct.total
     % show response bar
     [exp_struct.trial_struct.choice(i) exp_struct.trial_struct.confidence(i)] = responseBar(exp_struct.ptb_struct, ...
         bar, i, exp_struct, block);
-    choice = exp_struct.trial_struct.choice(i)
-    exp_struct.trial_struct.target_flag(i)
-    if choice == exp_struct.trial_struct.target_flag(i)
-        sound(exp_struct.ding, exp_struct.ding_rate);
-    else
-        sound(exp_struct.buzzer, exp_struct.buzzer_rate);
+    
+    if exp_struct.sound
+        if choice == exp_struct.trial_struct.target_flag(i)
+            sound(exp_struct.ding, exp_struct.ding_rate);
+        else
+            sound(exp_struct.buzzer, exp_struct.buzzer_rate);
+        end
     end
     Screen('DrawLines', exp_struct.ptb_struct.w0, exp_struct.ptb_struct.fix_xy, 2);
     
@@ -91,12 +96,6 @@ for i = 1:exp_struct.total
         exp_struct.FlipTimestamp(i,3) exp_struct.Missed(i,3) ...
         exp_struct.Beampos(i,3)] = Screen('Flip', exp_struct.ptb_struct.w0);
     
-    
-    if exit_experiment
-        %  ListenChar(0);
-        Screen('CloseAll');
-        break;
-    end
     
     if i == exp_struct.total
         end_str = ...
@@ -117,9 +116,38 @@ for i = 1:exp_struct.total
     % idisp(i);
 end
 
+
+if exp_struct.eye_tracking
+    Eyelink('StopRecording');
+    Eyelink('CloseFile');
+    edf_file = exp_struct.edf_file;
+    try
+        fprintf('receiving data file ''%s''\n', edf_file);
+        status = Eyelink('ReceiveFile');
+        if status > 0
+            fprintf('ReceiveFile status %d\n', status);
+        end
+        if exist(edf_file, 'file') == 2
+            fprintf('Data file ''%s'' can be found in ''%s''\n', edf_file, pwd);
+        end
+    catch rdf
+        fprintf('Problem receiving data file ''%s''\n', edf_file);
+        rdf;
+    end
+    
+    asc_file = [exp_struct.exp_file, '_eyes.asc'];
+    dos(['edf2asc ' edf_file]);
+    copyfile('demo.asc', asc_file);
+    
+    Eyelink('Shutdown');
+    
+    exp_struct.eye_link_file = asc_file;
+end
+
 if exp_struct.save_mode
     save(exp_struct.exp_file, 'exp_struct');
 end
+
 
 %ListenChar(0);
 Screen('CloseAll');
