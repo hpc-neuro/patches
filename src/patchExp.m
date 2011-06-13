@@ -2,11 +2,9 @@
 % Call this function to begin the experiment. 
 
 function patchExp()
-    
     global exp_struct 
     
     eye_tracking = 1;
-    dummy_eyes = 1;
     sound = 1;
         
     % w0 is the window pointer
@@ -23,7 +21,7 @@ function patchExp()
     
     ptb_struct = struct(); % psych toolbox related parameters
 
-    % init window
+    % Set up screen
     width = 1024;
     height = 768;
     top = 0;
@@ -35,6 +33,7 @@ function patchExp()
     maxScreen = max(Screen('Screens'));
     [ptb_struct.w0, ptb_struct.w0_rect] = ...
 	Screen('OpenWindow',maxScreen, [], [left top right bottom]);
+    
     
     ptb_struct.screen_xC = ptb_struct.w0_rect(3)/2;          % x midpoint
     ptb_struct.screen_yC = ptb_struct.w0_rect(4)/2;          % y midpoint
@@ -48,6 +47,7 @@ function patchExp()
     Screen('TextSize', ptb_struct.w0, 20);
     ptb_struct.refresh_rate = Screen('GetFlipInterval',ptb_struct.w0);
     
+    % Set up experiment
     blocks = 10;
     trials = 50;
     total = blocks * trials;
@@ -65,20 +65,8 @@ function patchExp()
     exp_struct.trial_struct.patch_struct = cell(total, 1);
         
     exp_struct.path_local = [ pwd '/' ]; % local path
-    src_ndx = strfind(exp_struct.path_local, '/src');
+    src_ndx = strfind(exp_struct.path_local, 'src');
     exp_struct.path_parent = exp_struct.path_local(1:src_ndx);
-    
-    exp_struct.sound = sound;
-    if sound
-        exp_struct.ding = wavread([exp_struct.path_parent 'ding.wav']);
-        exp_struct.buzzer = wavread([exp_struct.path_parent 'buzzer.wav']);
-        exp_struct.ding_rate = 11025;
-        exp_struct.buzzer_rate = 44100;
-    end
-
-    % set background color
-    Screen('FillRect', ptb_struct.w0, 128);
-    Screen('Flip', ptb_struct.w0);
 
     % set file name for storing experimental data
     exp_struct.path_results = ...
@@ -120,6 +108,15 @@ function patchExp()
     exp_struct.trial_struct.lft_ndx = lft_ndx;
     exp_struct.trial_struct.rgt_ndx = rgt_ndx;
 
+    % set up sound
+    exp_struct.sound = sound;
+    if sound
+        exp_struct.ding = wavread([exp_struct.path_parent 'ding.wav']);
+        exp_struct.buzzer = wavread([exp_struct.path_parent 'buzzer.wav']);
+        exp_struct.ding_rate = 11025;
+        exp_struct.buzzer_rate = 44100;
+    end
+    
     % set up eye tracking
     exp_struct.eye_tracking = eye_tracking;
     if eye_tracking
@@ -153,9 +150,7 @@ function patchExp()
 end  
 
 
-function exp_struct = setExpValues(answer, tot, n_factors)    
-
-    nflips = 3;
+function exp_struct = setExpValues(answer, tot, n_x_factors, n_flips)    
 
     trial_struct = struct();
     trial_struct.target_ndx = zeros(tot, 1);
@@ -180,13 +175,11 @@ function exp_struct = setExpValues(answer, tot, n_factors)
         'participation', answer{5}, ...
         'familiarity', answer{6}, ...
         'response_time', zeros(tot, 2), ...
-        'choice', repmat(10, tot, 1), ...
-        'confidence', zeros(tot,1), ...
-        'VBLTimestamp', zeros(tot, nflips), ...
-        'StimulusOnsetTime', zeros(tot, nflips), ...
-        'FlipTimestamp', zeros(tot, nflips), ...
-        'Missed', zeros(tot, nflips), ...
-        'Beampos', zeros(tot, nflips), ...
+        'VBLTimestamp', zeros(tot, n_flips), ...
+        'StimulusOnsetTime', zeros(tot, n_flips), ...
+        'FlipTimestamp', zeros(tot, n_flips), ...
+        'Missed', zeros(tot, n_flips), ...
+        'Beampos', zeros(tot, n_flips), ...
         'trial_struct', trial_struct, ...
         'seed', seed);
     

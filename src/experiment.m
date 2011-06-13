@@ -83,6 +83,11 @@ for i = 1:exp_struct.total
     [exp_struct.trial_struct.choice(i) exp_struct.trial_struct.confidence(i)] = responseBar(exp_struct.ptb_struct, ...
         bar, i, exp_struct, block);
     
+    choice = exp_struct.trial_struct.choice(i);
+    
+    exp_struct.trial_struct.x_factors(i, 1) = exp_struct.trial_struct.patch_struct{i}.mean_saliency;
+    exp_struct.trial_struct.x_factors(i, 2) = exp_struct.trial_struct.patch_struct{i}.patch_size;
+    
     if exp_struct.sound
         if choice == exp_struct.trial_struct.target_flag(i)
             sound(exp_struct.ding, exp_struct.ding_rate);
@@ -97,15 +102,15 @@ for i = 1:exp_struct.total
         exp_struct.Beampos(i,3)] = Screen('Flip', exp_struct.ptb_struct.w0);
     
     
-    if i == exp_struct.total
-        end_str = ...
-            sprintf('%s\n\n', ...
-            'You have completed the experiment.  Thank you for participating.');
-        DrawFormattedText(exp_struct.ptb_struct.w0, end_str, 'center', 'center');
-        %resultsNum(false, [160 80 40 20]);
-        Screen('Flip',w0);
-        WaitSecs(3);
-    end
+  %  if i == 3%exp_struct.total
+  %      end_str = ...
+  %          sprintf('%s\n\n', ...
+  %          'You have completed the experiment.  Thank you for participating.');
+  %      DrawFormattedText(exp_struct.ptb_struct.w0, end_str, 'center', 'center');
+  %      %resultsNum(false, [160 80 40 20]);
+  %      Screen('Flip',w0);
+  %      WaitSecs(3);
+  %  end
     
     % Missed Flip Messages
     
@@ -116,7 +121,7 @@ for i = 1:exp_struct.total
     % idisp(i);
 end
 
-
+Screen('CloseAll');
 if exp_struct.eye_tracking
     Eyelink('StopRecording');
     Eyelink('CloseFile');
@@ -142,6 +147,14 @@ if exp_struct.eye_tracking
     Eyelink('Shutdown');
     
     exp_struct.eye_link_file = asc_file;
+    
+    try
+      delete('demo.asc')
+    end
+    
+    try
+      delete('demo.edf');
+    end
 end
 
 if exp_struct.save_mode
@@ -150,7 +163,7 @@ end
 
 
 %ListenChar(0);
-Screen('CloseAll');
+
 % results();
 end
 
