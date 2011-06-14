@@ -4,7 +4,7 @@
 function patchExp()
     global exp_struct 
     
-    eye_tracking = 1;
+    eye_tracking = 0;
     sound = 1;
         
     % w0 is the window pointer
@@ -51,8 +51,10 @@ function patchExp()
     blocks = 10;
     trials = 50;
     total = blocks * trials;
-    
-    exp_struct = setExpValues(answer, total, 2);
+    n_x_factors = 2;
+    n_flips = 3; % num of flips per trial
+
+    exp_struct = setExpValues(answer, total, n_x_factors, n_flips);
     exp_struct.ptb_struct = ptb_struct;
     exp_struct.official_flag = strcmp(button,'Yes');
     exp_struct.blocks = blocks;
@@ -66,7 +68,7 @@ function patchExp()
         
     exp_struct.path_local = [ pwd '/' ]; % local path
     src_ndx = strfind(exp_struct.path_local, 'src');
-    exp_struct.path_parent = exp_struct.path_local(1:src_ndx);
+    exp_struct.path_parent = exp_struct.path_local(1:src_ndx-1);
 
     % set file name for storing experimental data
     exp_struct.path_results = ...
@@ -75,7 +77,7 @@ function patchExp()
       error(['~exist(): ', exp_struct.path_results]);
     end
     
-    if strcmp(button,'Yes')
+    if exp_struct.official_flag
       exp_struct.path_exp = [exp_struct.path_results, 'official/'];
     else
       exp_struct.path_exp = [exp_struct.path_results, 'tmp/'];
@@ -120,9 +122,8 @@ function patchExp()
     % set up eye tracking
     exp_struct.eye_tracking = eye_tracking;
     if eye_tracking
-        exp_struct.dummy_eyes = dummy_eyes;
         exp_struct.ptb_struct.el = EyelinkInitDefaults(exp_struct.ptb_struct.w0);
-        if ~EyelinkInit(dummy_eyes);
+        if ~EyelinkInit();
             error('Eyelink Init aborted.');
             cleanup;
             return;
@@ -159,7 +160,7 @@ function exp_struct = setExpValues(answer, tot, n_x_factors, n_flips)
     trial_struct.choice = zeros(tot, 1);
     trial_struct.confidence = zeros(tot, 1);
     trial_struct.correct = zeros(tot, 1);
-    trial_struct.x_factors = zeros(tot, n_factors);
+    trial_struct.x_factors = zeros(tot, n_x_factors);
     % draw the target patch from the left or right image with equal
     % probability
     % random number generator
@@ -189,7 +190,8 @@ end
 function [button answer] = getInfo()
     button = questdlg('Is this an official experiment?','official','No');
     if strcmp(button, 'Cancel');
-        error('Cancelled')
+      Screen('CloseAll');
+      error('Cancelled')
     end
 
     prompt = {'Do you have normal or corrected-to-normal vision?', ...
