@@ -44,7 +44,7 @@ function experiment()
       left_name = exp_struct.imgs(left_index).name;
       right_name = exp_struct.imgs(right_index).name;
     
-      % left = 0   right = 1
+      %% left = 0   right = 1
       if exp_struct.trial_struct.target_flag(i)
           target_ndx = right_index;
       else
@@ -52,34 +52,40 @@ function experiment()
       end
       exp_struct.trial_struct.target_ndx(i) = target_ndx;
     
-      % Get patch from target
-      patch_struct = exp_struct.patch_struct(target_ndx).patches(1);
+      %% Get patch from target
+      patch_struct = exp_struct.patch_data(target_ndx).patches(1);
       exp_struct.trial_struct.patch_struct{i} = patch_struct;
     
-      % Read images
+      %% Read images
       im_left = imread([exp_struct.path_stim left_name]);
       im_right = imread([exp_struct.path_stim right_name]);
       im_patch = patch_struct.patch;
     
-      % Convert to grayscale
-      im_left = col2gray(im_left);
-      im_right = col2gray(im_right);
-      im_patch = col2gray(im_patch);
+      %% Convert to grayscale
+      if size(im_left,3) == 3
+	im_left = col2gray(im_left);
+      end
+      if size(im_right,3) == 3
+	im_right = col2gray(im_right);
+      end
+      if size(im_patch,3) == 3
+	im_patch = col2gray(im_patch);
+      end
             
-      % create the image texture
+      %% create the image texture
       left_tex = Screen('MakeTexture', exp_struct.ptb_struct.w0, im_left);
       right_tex = Screen('MakeTexture', exp_struct.ptb_struct.w0, im_right);
       exp_struct.ptb_struct.patch_tex = Screen('MakeTexture', exp_struct.ptb_struct.w0, im_patch);
     
-      % draw the left texture to the backbuffer
+      %% draw the left texture to the backbuffer
       Screen('DrawTexture', exp_struct.ptb_struct.w0, left_tex);
       stimFlip(delay, i, exp_struct.ptb_struct);
 
-      % draw right texture and then patch
-      % TODO: This is really inelegant.
+      %% draw right texture and then patch
+      %% TODO: This is really inelegant.
       stimFlip(delay, i, exp_struct.ptb_struct, right_tex);
     
-      % show response bar
+      %% show response bar
       [exp_struct.trial_struct.choice(i) exp_struct.trial_struct.confidence(i)] = responseBar(exp_struct.ptb_struct, ...
           bar, i, exp_struct, block);
     
