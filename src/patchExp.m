@@ -1,11 +1,11 @@
-% SoS is the main function for the speed of sight experiment.  
+% patchExp is the main function for the patches experiment.  
 % Call this function to begin the experiment. 
 
 function patchExp()
     global exp_struct 
     
     eye_tracking = 0;
-    sound = 1;
+    sound = 0;
         
     % w0 is the window pointer
     % w0_rect is a 4-element array containing the x,y coordinates of the
@@ -17,7 +17,7 @@ function patchExp()
     % KbName('UnifyKeyNames');    % Switches internal naming scheme to
     % MacOS-X naming scheme   
     
-    [button answer] = getInfo;    
+    [button answer] = getInfoOctave;    
     
     ptb_struct = struct(); % psych toolbox related parameters
 
@@ -187,8 +187,10 @@ function exp_struct = setExpValues(answer, tot, n_x_factors, n_flips)
 end
 
 
+%% works only in matlab
 function [button answer] = getInfo()
-    button = questdlg('Is this an official experiment?','official','No');
+  %% 2nd arg == title, 3rd ard == default
+  button = questdlg('Is this an official experiment?','official','No');
     if strcmp(button, 'Cancel');
       Screen('CloseAll');
       error('Cancelled')
@@ -204,3 +206,4 @@ function [button answer] = getInfo()
     %def = {'20','hsv'};
     answer = inputdlg(prompt,dlg_title,num_lines);
 end
+
